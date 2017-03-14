@@ -6,4 +6,4 @@ Author: [Wangym5106](https://github.com/wangym5106)
 
 LICENSE: GPLv3
 
-Part of the EVEModX peoject.
+Part of the EVEModX project.
