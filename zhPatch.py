@@ -1,4 +1,4 @@
-# Version: 20170223
+# Version: 20170805
 # Website: http://zhpatch.evemodx.com/
 # QQ Group Number: 494245573
 
@@ -36,7 +36,10 @@ def patch_localization():
 
 def patch_font():
     from carbonui import languageConst, fontconst
-    fontconst.FONTFAMILY_PER_WINDOWS_LANGUAGEID[languageConst.LANG_JAPANESE] = fontconst.FONTFAMILY_PER_WINDOWS_LANGUAGEID[languageConst.LANG_CHINESE]
+    try:
+        fontconst.FONTFAMILY_PER_WINDOWS_LANGUAGEID[languageConst.LANG_JAPANESE] = fontconst.FONTFAMILY_PER_WINDOWS_LANGUAGEID[languageConst.LANG_CHINESE]
+    except:
+        pass
 
 
 patch_localization()
