@@ -2,7 +2,6 @@
 # Website: https://zhpatch.evemodx.com/
 # QQ Group Number: 494245573
 
-import blue
 import localization
 import localization.internalUtil
 import localization.localizationBase
@@ -35,6 +34,7 @@ def patch_localization():
     localization.GetByMessageID = localization.LOCALIZATION_REF.GetByMessageID
 
 def patch_zhtext():
+
     def load_text():
         import requests
         try:
@@ -50,7 +50,6 @@ def patch_zhtext():
             return None
 
     def _LoadPickleData_decorator(func):
-        # zhtext_revised = load_text() # ERROR: local variable 'data' referenced before assaignment
         def wrapper(self, pickleName, dataType):
             ret = func(self, pickleName, dataType)
             if 'zh' in pickleName:
