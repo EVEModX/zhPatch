@@ -55,8 +55,8 @@ def patch_zhtext():
             if 'zh' in pickleName:
                 zhtext_revised = load_text()
                 if zhtext_revised:
-	                for messageID, text_revised in zhtext_revised.items():
-	                    ret[1][int(messageID)] = (text_revised, None, None)
+                    for messageID, text_revised in zhtext_revised.items():
+                        ret[1][int(messageID)] = (text_revised, None, None)
             return ret
         return wrapper
 
