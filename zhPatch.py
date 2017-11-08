@@ -1,7 +1,8 @@
-# Version: 20170805
-# Website: http://zhpatch.evemodx.com/
+# Version: 20171108
+# Website: https://zhpatch.evemodx.com/
 # QQ Group Number: 494245573
 
+import blue
 import localization
 import localization.internalUtil
 import localization.localizationBase
@@ -33,6 +34,34 @@ def patch_localization():
     localization._ReadLocalizationLanguagePickles = localization.LOCALIZATION_REF._ReadLocalizationLanguagePickles
     localization.GetByMessageID = localization.LOCALIZATION_REF.GetByMessageID
 
+def patch_zhtext():
+    def load_text():
+        import requests
+        try:
+            headers = {
+                'User-Agent': 'requests/zhpatch'
+            }
+            data = requests.get(r'https://nosni.lodestone.zhpatch.evemodx.com/api/all', headers=headers).json()
+            if data['status'] != 200:
+                raise Exception('Patch error', 'API server not responding correct data')
+                return None
+            return data['data']
+        except:
+            return None
+
+    def _LoadPickleData_decorator(func):
+        # zhtext_revised = load_text() # ERROR: local variable 'data' referenced before assaignment
+        def wrapper(self, pickleName, dataType):
+            ret = func(self, pickleName, dataType)
+            if 'zh' in pickleName:
+                zhtext_revised = load_text()
+                if zhtext_revised:
+	                for messageID, text_revised in zhtext_revised.items():
+	                    ret[1][int(messageID)] = (text_revised, None, None)
+            return ret
+        return wrapper
+
+    localization.localizationBase.Localization._LoadPickleData = _LoadPickleData_decorator(localization.localizationBase.Localization._LoadPickleData)
 
 def patch_font():
     from carbonui import languageConst, fontconst
@@ -41,7 +70,7 @@ def patch_font():
     except:
         pass
 
-
+patch_zhtext()
 patch_localization()
 patch_font()
 
