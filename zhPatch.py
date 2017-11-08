@@ -43,7 +43,7 @@ def patch_zhtext():
             }
             data = requests.get(r'https://nosni.lodestone.zhpatch.evemodx.com/api/all', headers=headers).json()
             if data['status'] != 200:
-                raise Exception('Patch error', 'API server not responding correct data')
+                #raise Exception('Patch error', 'API server not responding correct data')
                 return None
             return data['data']
         except:
