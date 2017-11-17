@@ -44,10 +44,10 @@ def patch_zhtext():
             }
             data = requests.get(r'https://nosni.lodestone.zhpatch.evemodx.com/api/all', headers=headers).json()
             if data['status'] != 200:
-                return None
+                return {}
             return data['data']
         except:
-            return None
+            return {}
 
     def _LoadPickleData_decorator(func):
         global zhtext_revised
