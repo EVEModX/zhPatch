@@ -1,8 +1,10 @@
 # zhPatch
 
-## Not Maintained
+### Not Maintained
 
 CCP removes dev interfaces in the latest SISI patch. This project will be closed.
+
+---
 
 Chinese Patch on EVE Online https://zhpatch.evemodx.com/
 
