@@ -1,12 +1,10 @@
 # zhPatch
 
-### Not Maintained
-
-[2018/03/16] CCP blocks dev interfaces in the latest SISI patch. This project will be closed.
+As CCP enabled Chinese localization on Tranquility. This repository is now archived.
 
 ---
 
-Chinese Patch on EVE Online https://zhpatch.evemodx.com/
+Chinese Patch on EVE Online https://zhpatch2.evemodx.com/
 
 Author: [Wangym5106](https://github.com/wangym5106), [ybai](https://github.com/violarulan)
 
