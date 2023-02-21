@@ -1,79 +1,103 @@
-# Version: 20171108
-# Website: https://zhpatch.evemodx.com/
-# QQ Group Number: 494245573
-
+# 20220308
+import __builtin__
+import os.path
+import blue
+import uthread
+from eveprefs import boot
 import localization
 import localization.internalUtil
 import localization.localizationBase
 
-import logmodule
-
-def patch_localization():
-
-    def _ReadLocalizationLanguagePickles_decorator(func):
-        def wrapper(self, prefix, supportedLanguages, dataType):
-            ret = func(self, prefix, supportedLanguages, dataType)
+def _ReadLocalizationLanguagePickles_decorator(func):
+    def wrapper(self, prefix, supportedLanguages, dataType):
+        ret = func(self, prefix, supportedLanguages, dataType)
+        ext_pickle_path = os.path.join(blue.remoteFileCache.cacheFolder, '..', 'localization_fsd_zh.pickle')
+        if os.path.exists(ext_pickle_path):
+            try:
+                import whitelistpickle, eveLocalization
+                unPickledObject = whitelistpickle.load(open(ext_pickle_path, 'rb'))
+                eveLocalization.LoadMessageData(*unPickledObject)
+            except:
+                pass
+        else:
             self._LoadLanguagePickle(prefix, 'zh', dataType)
-            return ret
-        return wrapper
-
-    def GetByMessageID_decorator(func):
-        def wrapper(self, messageID, languageID=None, **kwargs):
-            ret = None
-            if not languageID or languageID != 'en-us' or localization.internalUtil.GetLanguageID() == 'en-us':
-                ret = func(self, messageID, languageID='zh', **kwargs)
-            if not ret or ret.startswith('[no '):
-                ret = func(self, messageID, languageID='en-us', **kwargs)
-            return ret
-        return wrapper
-
-    localization.localizationBase.Localization._ReadLocalizationLanguagePickles = _ReadLocalizationLanguagePickles_decorator(localization.localizationBase.Localization._ReadLocalizationLanguagePickles)
-    localization.localizationBase.Localization.GetByMessageID = GetByMessageID_decorator(localization.localizationBase.Localization.GetByMessageID)
-
-    localization._ReadLocalizationLanguagePickles = localization.LOCALIZATION_REF._ReadLocalizationLanguagePickles
-    localization.GetByMessageID = localization.LOCALIZATION_REF.GetByMessageID
-
-def patch_zhtext():
-
-    def load_text():
-        import requests
+        
         try:
-            headers = {
-                'User-Agent': 'requests/zhpatch',
-                'zhPatch-Version': '20171108'
-            }
-            data = requests.get(r'https://nosni.lodestone.zhpatch.evemodx.com/api/all', headers=headers).json()
-            if data['status'] != 200:
-                return {}
-            return data['data']
+            import eve.client.script.ui.util.searchUtil
+            if eve.client.script.ui.util.searchUtil.GetResultsList.__name__ == 'GetResultsList':
+                eve.client.script.ui.util.searchUtil.GetResultsList = GetResultsList_decorator(eve.client.script.ui.util.searchUtil.GetResultsList)
         except:
-            return {}
+            pass
+        return ret
+    return wrapper
 
-    def _LoadPickleData_decorator(func):
-        global zhtext_revised
-        zhtext_revised = {}
-        def wrapper(self, pickleName, dataType):
-            global zhtext_revised
-            if not zhtext_revised:
-                zhtext_revised = load_text()
-            ret = func(self, pickleName, dataType)
-            if 'zh' in pickleName:
-                for messageID, text_revised in zhtext_revised.items():
-                    ret[1][int(messageID)] = (text_revised, None, None)
-            return ret
-        return wrapper
+def Get_decorator(func):
+    def wrapper(self, messageIDorLabel, languageID=None, **kwargs):
+        ret = None
+        if not languageID or (languageID not in ('en-us', 'en') or localization.internalUtil.GetLanguageID() == 'en-us'):
+            ret = func(self, messageIDorLabel, languageID='zh', **kwargs)
+        if not ret or ret.startswith('[no messageid:'):
+            ret = func(self, messageIDorLabel, languageID='en-us', **kwargs)
+        return ret
+    return wrapper
 
-    localization.localizationBase.Localization._LoadPickleData = _LoadPickleData_decorator(localization.localizationBase.Localization._LoadPickleData)
+def GetResultsList_decorator(func):
+    import evetypes
+    from inventoryrestrictions import is_contractable
+    from eve.client.script.ui.util.searchUtil import _FormatSearchInput
+    from eve.common.script.search.const import ResultType
+    from textImporting.textToTypeIDFinder import TextToTypeIDFinder, SEARCH_LOCALIZED
+    published_type_ids = [type_id for type_id in evetypes.Iterate() if evetypes.IsPublished(type_id) and is_contractable(type_id)]
+    type_id_finder = TextToTypeIDFinder(published_type_ids, True)
+    def wrapper(searchStr, groupIDList, *args, **kwargs):
+        ret = func(searchStr, groupIDList, *args, **kwargs)
+        if groupIDList == [ResultType.item_type]:
+            cleaned_search_str = _FormatSearchInput(searchStr).lower()
+            result = type_id_finder.FindTypeIDsWithPartialMatch(cleaned_search_str, SEARCH_LOCALIZED)
+            return list(set(ret).union(result))
+        return ret
+    return wrapper  
 
 def patch_font():
     from carbonui import languageConst, fontconst
     try:
-        fontconst.FONTFAMILY_PER_WINDOWS_LANGUAGEID[languageConst.LANG_JAPANESE] = fontconst.FONTFAMILY_PER_WINDOWS_LANGUAGEID[languageConst.LANG_CHINESE]
+        fontconst.FONTFAMILY_PER_WINDOWS_LANGUAGEID[languageConst.LANG_JAPANESE] = fontconst.FONTFAMILY_PER_WINDOWS_LANGUAGEID[languageConst.LANG_ENGLISH]
+        fontconst.FONTFAMILY_PER_WINDOWS_LANGUAGEID[languageConst.LANG_KOREAN] = fontconst.FONTFAMILY_PER_WINDOWS_LANGUAGEID[languageConst.LANG_CHINESE]
     except:
         pass
 
-patch_zhtext()
-patch_localization()
-patch_font()
+def reload_modules():
+    reload_modules = (
+        "eve.client.script.ui.shared.mapView.mapViewColorHandler",
+        "eve.client.script.ui.shared.mapView.filters.mapFilterActualColor",
+        "eve.client.script.ui.shared.mapView.filters.mapFilterEDENCOMFortress",
+        "eve.client.script.ui.shared.mapView.filters.mapFilterEDENCOMMinorVictories",
+        "eve.client.script.ui.shared.mapView.filters.mapFilterTriglavianMinorVictories",
+        "eve.client.script.ui.shared.mapView.filters.filtersByID",
+        "eve.client.script.ui.shared.mapView.mapViewSettings",
+        "eve.client.script.ui.shared.mapView.controls.mapViewCheckboxOptionButton"
+    )
+    import sys
+    for module in reload_modules:
+        if module in sys.modules:
+            try:
+                reload(sys.modules[module])
+            except:
+                pass
 
-__import__('autoexec_client')
+def patch():
+    localization.localizationBase.Localization._ReadLocalizationLanguagePickles = _ReadLocalizationLanguagePickles_decorator(localization.localizationBase.Localization._ReadLocalizationLanguagePickles)
+    localization.localizationBase.Localization.Get = Get_decorator(localization.localizationBase.Localization.Get)
+    localization._ReadLocalizationLanguagePickles = localization.LOCALIZATION_REF._ReadLocalizationLanguagePickles
+    localization.Get = localization.LOCALIZATION_REF.Get
+    patch_font()
+    localization.LoadLanguageData()
+    reload_modules()
+    if hasattr(__builtin__, 'cfg'):
+        cfg.ReloadLocalizedNames()
+    if hasattr(__builtin__, 'sm') and sm.state == 4:
+        sm.ChainEvent('ProcessUIRefresh')
+        sm.ScatterEvent('OnUIRefresh')
+
+if boot.region != 'optic' and localization.Get.__name__ == 'Get':
+    uthread.new(patch)
